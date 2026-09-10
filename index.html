@@ -6,7 +6,6 @@
     <title>Citrux AI Chat</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Custom glowing animation effects */
         @keyframes pulseGlow {
             0%, 100% { box-shadow: 0 0 15px rgba(59, 130, 246, 0.4); }
             50% { box-shadow: 0 0 25px rgba(147, 51, 234, 0.6); }
@@ -17,7 +16,6 @@
         .text-glow {
             text-shadow: 0 0 12px rgba(255, 255, 255, 0.3);
         }
-        /* Style markdown lists nicely when rendered */
         .ai-content ul {
             list-style-type: disc;
             margin-left: 1.2rem;
@@ -36,6 +34,19 @@
         .ai-content p {
             margin-bottom: 0.5rem;
         }
+        @keyframes blink {
+            0% { opacity: .2; }
+            20% { opacity: 1; }
+            100% { opacity: .2; }
+        }
+        .saving span {
+            animation-name: blink;
+            animation-duration: 1.4s;
+            animation-iteration-count: infinite;
+            animation-fill-mode: both;
+        }
+        .saving span:nth-child(2) { animation-delay: .2s; }
+        .saving span:nth-child(3) { animation-delay: .4s; }
     </style>
 </head>
 <body class="bg-[#1e1e1e] text-gray-100 h-screen flex flex-col justify-between m-0 font-sans">
@@ -62,8 +73,7 @@
     </div>
 
     <script>
-        // PASTE YOUR GEMINI API KEY INSIDE THE QUOTES BELOW:
-        const GEMINI_API_KEY = "AQ.Ab8RN6Ki7T79HGnkITFAIu2fGSOcsKfEn7pp76ylcjtyHqdgDg";
+        const GEMINI_API_KEY = "YOUR_API_KEY_HERE";
 
         const userInput = document.getElementById('userInput');
         const sendBtn = document.getElementById('sendBtn');
@@ -93,6 +103,18 @@
             userInput.value = '';
             chatContainer.scrollTop = chatContainer.scrollHeight;
 
+            // Append Thinking Indicator
+            const loadingId = 'loading-' + Date.now();
+            chatContainer.innerHTML += `
+                <div id="${loadingId}" class="flex gap-3 items-start my-3">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-yellow-400 to-orange-500 flex items-center justify-center font-bold text-black text-xs mt-1 shadow-md flex-shrink-0">🍋</div>
+                    <div class="text-gray-400 text-sm leading-relaxed pt-2 saving">
+                        Citrux is thinking<span>.</span><span>.</span><span>.</span>
+                    </div>
+                </div>
+            `;
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+
             try {
                 const structuredPrompt = `Please answer the following question clearly, using a point-by-point breakdown or bullet points where appropriate to make it very easy to understand: ${rawText}`;
 
@@ -106,6 +128,9 @@
 
                 const data = await response.json();
                 
+                // Remove loading indicator
+                document.getElementById(loadingId).remove();
+
                 if (data.error) {
                     throw new Error(data.error.message);
                 }
@@ -125,6 +150,7 @@
                 chatContainer.scrollTop = chatContainer.scrollHeight;
 
             } catch (error) {
+                document.getElementById(loadingId)?.remove();
                 console.error("API Error:", error);
                 chatContainer.innerHTML += `
                     <div class="text-red-400 text-sm p-3 bg-red-950/40 rounded-xl border border-red-800">
